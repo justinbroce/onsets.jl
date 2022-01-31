@@ -1,4 +1,4 @@
-using  DSP
+using  DSP, LinearAlgebra, ImageFilterting
 #convolution version of moving average filter
 # x is an array
 
@@ -31,4 +31,56 @@ function compute_novelty_energy(x, Fs=1, N=2048, H=128, gamma=10.0, norm=true)
     end
     return novelty_energy, Fs_feature
 end
+function peak_picking_simple(x, threshold=nothing)
+ 
+    peaks = []
+    if threshold == nothing
+        threshold = minimum(x) - 1
+    end
+    for i in 2:length(x)
+        if x[i - 1] < x[i] && x[i] > x[i + 1]
+            if x[i] >= threshold
+                push!(peaks,i)
+            end
+        end
+    end
+    return peaks
+end
 
+function median_filter(x,median_len)
+    isodd(median_len) ? mapwindow(median, x, median_len)  : mapwindow(median, x, median_len+1) 
+    
+end
+function peak_picking_MSAF(x, median_len=16, offset_rel=0.05, sigma=4.0)
+    offset = mean(x) * offset_rel
+    x = gaussian_filter(x, sigma)
+    threshold_local = median_filter(x, median_len) .+ offset
+    peaks = []
+    for i in 2:length(x)-1
+        if x[i - 1] < x[i] && x[i] > x[i + 1]
+            if x[i] > threshold_local[i]
+                push!(peaks,i)
+            end
+        end
+    end
+    
+    return peaks, x, threshold_local
+end
+       
+function gauss(σ::Real, l::Int = 4*ceil(Int,σ)+1)
+    #isodd(l) || throw(ArgumentError("length must be odd"))
+    w = l>>1
+    g = σ == 0 ? [exp(0/(2*oftype(σ, 1)^2))] : [exp(-x^2/(2*σ^2)) for x=-w:w]
+    centered(g/sum(g))
+end
+function gaussian_filter(x,σ)
+    return (conv(gauss(σ),x)[1:length(x)])
+    #==conv is slow
+    and i was unable to convolve with filters
+    if speed is an issue,
+    replace code with imfilter from image filtering
+    ==#
+end
+
+=##
+        
