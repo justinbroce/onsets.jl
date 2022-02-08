@@ -82,5 +82,9 @@ function gaussian_filter(x,σ)
     ==#
 end
 
-=##
-        
+function scipy_gauss(M,σ)
+    
+    n = collect(0:M-1) .- (M-1.0)/2.0
+    σ₂ = 2 * σ * σ
+    w = exp.(-n .^ 2 ./ σ₂)
+end
